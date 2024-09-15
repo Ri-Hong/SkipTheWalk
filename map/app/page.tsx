@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Suspense } from 'react'
 import dynamic from "next/dynamic";
 import { useSearchParams } from 'next/navigation'
 
@@ -15,5 +16,9 @@ export default function Home() {
  
   const room = searchParams.get('room') || '';
 
-  return <Map room={room}/>;
+  return (
+    <Suspense>
+      <Map room={room}/>;
+    </Suspense>
+  )
 }
