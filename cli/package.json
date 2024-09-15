@@ -1,0 +1,13 @@
+{
+  "name": "stw-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "stw": "./stw.js"
+  },
+  "dependencies": {
+    "commander": "^10.0.0",
+    "inquirer": "^10.2.2",
+    "node-fetch": "^3.3.2"
+  }
+}
