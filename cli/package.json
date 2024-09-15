@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "commander": "^10.0.0",
+    "ejs": "^3.1.10",
     "inquirer": "^10.2.2",
     "node-fetch": "^3.3.2"
   }
