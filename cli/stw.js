@@ -4,13 +4,13 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import fetch from 'node-fetch';
 import fs from 'fs';
-import { exec } from 'child_process';
 import ejs from 'ejs';
 const program = new Command();
 
-// Function to handle pizza order and send it to API
+// Function to handle pizza order and collect all necessary information
 async function orderPizza() {
   const questions = [
+    // Pizza information prompts
     {
       type: 'list',
       name: 'type',
@@ -29,20 +29,57 @@ async function orderPizza() {
       message: 'Choose your toppings:',
       choices: ['Mushrooms', 'Onions', 'Sausage', 'Bacon', 'Extra Cheese', 'Peppers', 'Olives'],
     },
+    // Customer information prompts
     {
       type: 'input',
-      name: 'deliveryAddress',
-      message: 'Enter your delivery address:',
+      name: 'firstName',
+      message: 'Enter your first name:',
+      validate: (input) => input ? true : 'First name is required',
     },
     {
-        type: 'input',
-        name: 'deliveryRoom',
-        message: 'Enter your delivery room number:',
-        validate: (input) => {
-            const isValid = /^\d+$/.test(input);  // Check if the input contains only digits
-            return isValid ? true : 'Please enter a valid room number (numbers only).';
-        }
+      type: 'input',
+      name: 'lastName',
+      message: 'Enter your last name:',
+      validate: (input) => input ? true : 'Last name is required',
     },
+    {
+      type: 'input',
+      name: 'email',
+      message: 'Enter your email:',
+      validate: (input) => /\S+@\S+\.\S+/.test(input) ? true : 'Invalid email format',
+    },
+    {
+      type: 'input',
+      name: 'phoneNumber',
+      message: 'Enter your phone number:',
+      validate: (input) => /^\d{10,15}$/.test(input) ? true : 'Phone number must contain only digits and be 10-15 digits long',
+    },
+    // Address information prompts
+    {
+      type: 'input',
+      name: 'street',
+      message: 'Enter your street address:',
+      validate: (input) => input ? true : 'Street address is required',
+    },
+    {
+      type: 'input',
+      name: 'city',
+      message: 'Enter your city:',
+      validate: (input) => input ? true : 'City is required',
+    },
+    {
+      type: 'input',
+      name: 'region',
+      message: 'Enter your region/state:',
+      validate: (input) => input ? true : 'Region/state is required',
+    },
+    {
+      type: 'input',
+      name: 'postalCode',
+      message: 'Enter your postal code:',
+      validate: (input) => input ? true : 'Postal code is required',
+    },
+    // Payment information prompts
     {
       type: 'input',
       name: 'creditCardNumber',
@@ -51,32 +88,59 @@ async function orderPizza() {
     },
     {
       type: 'input',
-      name: 'expiryDate',
+      name: 'creditCardCvv',
+      message: 'Enter your credit card CVV:',
+      validate: (input) => /^\d{3}$/.test(input) ? true : 'Invalid CVV number',
+    },
+    {
+      type: 'input',
+      name: 'creditCardDate',
       message: 'Enter your card expiry date (MM/YY):',
       validate: (input) => /^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(input) ? true : 'Invalid expiry date format',
     },
     {
       type: 'input',
-      name: 'cvc',
-      message: 'Enter your card CVC:',
-      validate: (input) => /^\d{3}$/.test(input) ? true : 'Invalid CVC',
-    },
+      name: 'creditCardPostalCode',
+      message: 'Enter your credit card postal code:',
+      validate: (input) => input ? true : 'Postal code is required',
+    }
   ];
 
   // Get user answers
   const answers = await inquirer.prompt(questions);
 
-  create_tf_file(answers.firstName, answers.lastName, answers.email, answers.phoneNumber, answers.creditCardNumber, answers.creditCardCvv, answers.creditCardDate, answers.creditCardPostalCode, answers.street, answers.city, answers.region, answers.postalCode)
+  // Combine pizza details into a list of individual strings
+  const pizzaDetails = [answers.type, answers.size, ...answers.toppings];
 
-  // Send the data to the API
-  const apiUrl = 'https://skip-the-walk.vercel.app/api/order'; // Replace with your Next.js API endpoint
+  // Add a timestamp to track the order time
+  const orderTime = new Date().toISOString();
+
+  // Call the function to create the Terraform file with the gathered information (excluding order time)
+  create_tf_file(
+    answers.firstName,
+    answers.lastName,
+    answers.email,
+    answers.phoneNumber,
+    answers.creditCardNumber,
+    answers.creditCardCvv,
+    answers.creditCardDate,
+    answers.creditCardPostalCode,
+    answers.street,
+    answers.city,
+    answers.region,
+    answers.postalCode,
+    pizzaDetails
+  );
+
+  // Send the data to the API with pizza information and orderTime included
+  const apiUrl = `https://skip-the-walk.vercel.app/api/order`;
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(answers),
+      body: JSON.stringify({ ...answers, pizzaDetails, orderTime }),  // Include orderTime in the API request
     });
 
     if (response.ok) {
@@ -97,8 +161,22 @@ program
 
 program.parse(process.argv);
 
-
-function create_tf_file(firstName, lastName, email, phoneNumber, creditCardNumber, creditCardCvv, creditCardDate, creditCardPostalCode, street, city, region, postalCode) {
+// Function to create the Terraform file with the gathered information (excluding orderTime)
+function create_tf_file(
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
+  creditCardNumber,
+  creditCardCvv,
+  creditCardDate,
+  creditCardPostalCode,
+  street,
+  city,
+  region,
+  postalCode,
+  pizzaDetails
+) {
   // Define the Terraform template with placeholders
   const terraformTemplate = `
 terraform {
@@ -136,7 +214,7 @@ data "dominos_store" "store" {
 
 data "dominos_menu_item" "item" {
   store_id     = data.dominos_store.store.store_id
-  query_string = ["philly", "medium"]
+  query_string = <%- JSON.stringify(pizzaDetails) %> // Pizza details as an array of strings
 }
 
 output "OrderOutput" {
@@ -150,21 +228,7 @@ resource "dominos_order" "order" {
 }
 `;
 
-// Parameters from your Node server
-//   const parameters = {
-//     firstName: "My",
-//     lastName: "Name",
-//     email: "my@name.com",
-//     phoneNumber: "15555555555",
-//     creditCardNumber: 123456789101112,
-//     creditCardCvv: 1314,
-//     creditCardDate: "15/16",
-//     creditCardPostalCode: "18192",
-//     street: "123 Main St",
-//     city: "Anytown",
-//     region: "WA",
-//     postalCode: "02122"
-//   };
+  // Replace placeholders with actual values
   const parameters = {
     firstName: firstName,
     lastName: lastName,
@@ -177,38 +241,15 @@ resource "dominos_order" "order" {
     street: street,
     city: city,
     region: region,
-    postalCode: postalCode
+    postalCode: postalCode,
+    pizzaDetails: pizzaDetails
   };
 
-// Replace placeholders with actual values
+  // Generate the Terraform file using ejs rendering (with unescaped strings for pizzaDetails)
   const generatedTerraform = ejs.render(terraformTemplate, parameters);
 
-// Write the generated content to a .tf file
+  // Write the generated content to a .tf file
   fs.writeFileSync('generated_terraform.tf', generatedTerraform);
 
   console.log('Terraform file generated successfully!');
-
-// // Function to run shell commands
-// const runCommand = (command, callback) => {
-//   exec(command, (error, stdout, stderr) => {
-//     if (error) {
-//       console.error(`Error: ${error.message}`);
-//       return;
-//     }
-//     if (stderr) {
-//       console.error(`stderr: ${stderr}`);
-//       return;
-//     }
-//     console.log(`stdout: ${stdout}`);
-//     if (callback) callback();
-//   });
-// };
-//
-// // Initialize Terraform (terraform init)
-// runCommand('terraform init', () => {
-//   // After terraform init, run terraform apply
-//   runCommand('terraform apply -auto-approve', () => {
-//     console.log('Terraform apply complete!');
-//   });
-// });
 }
