@@ -7,9 +7,7 @@ interface OrderRequestBody {
   toppings: string[];
   deliveryLocation: string;
   deliveryRoom: string;
-  creditCardNumber: string;
-  expiryDate: string;
-  cvc: string;
+  orderTime: string;
 }
 
 // Define the response structures
@@ -21,6 +19,7 @@ interface OrderResponse {
     toppings: string[];
     deliveryLocation: string;
     deliveryRoom: string;
+    orderTime: string;
   };
 }
 
@@ -28,11 +27,11 @@ const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/T07M1ESF6LF/B07MDPYE
 
 // Function to send a message to Slack
 export async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
-  const { type, size, toppings, deliveryLocation, deliveryRoom } = orderDetails;
+  const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
 
   // Create the Slack message payload
   const payload = {
-    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}`,
+    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}`,
   };
 
   try {
@@ -63,17 +62,11 @@ export async function POST(req: NextRequest) {
     toppings,
     deliveryLocation,
     deliveryRoom,
-    creditCardNumber,
-    expiryDate,
-    cvc,
+    orderTime
   } = body;
 
-  console.log("creditCardNumber", creditCardNumber);
-  console.log("expiryDate", expiryDate);
-  console.log("cvc", cvc);
-
   // Handle the order (you can add logic here, such as saving to the database)
-  await sendSlackMessage({ type, size, toppings, deliveryLocation, deliveryRoom });
+  await sendSlackMessage({ type, size, toppings, deliveryLocation, deliveryRoom, orderTime });
 
 
   // Send back a success response with the order details
@@ -84,7 +77,8 @@ export async function POST(req: NextRequest) {
       size,
       toppings,
       deliveryLocation,
-      deliveryRoom
+      deliveryRoom,
+      orderTime
     },
   });
 }
