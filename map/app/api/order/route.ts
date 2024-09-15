@@ -29,13 +29,36 @@ if (!SLACK_WEBHOOK_URL) {
   throw new Error("SLACK_WEBHOOK_URL is not defined in the environment variables.");
 }
 
+// Function to format the orderTime in Toronto time (Eastern Time)
+function formatOrderTime(dateString: string): string {
+  const date = new Date(dateString);
+
+  // Create a DateTimeFormat object for Toronto time (Eastern Time)
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/Toronto', // Eastern Time Zone
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: true, // 12-hour format
+  };
+
+  // Format the date to a more readable string
+  return new Intl.DateTimeFormat('en-CA', options).format(date);
+}
+
 // Function to send a message to Slack
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
   const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
 
-  // Create the Slack message payload
+  // Convert the orderTime to Toronto time (Eastern Time Zone)
+  const formattedOrderTime = formatOrderTime(orderTime);
+
+  // Create the Slack message payload with formatted time
   const payload = {
-    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}`,
+    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${formattedOrderTime}`,
   };
 
   try {
@@ -54,6 +77,7 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
     console.error('Error:', error);
   }
 }
+
 
 
 // POST handler for the API route
