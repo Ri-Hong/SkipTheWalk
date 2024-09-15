@@ -140,29 +140,110 @@ async function test_order() {
 
 // test_order();
 
+// app.post('/order', async (req, res) => {
+//     const pizza=new Item(
+//         {
+//             //16 inch hand tossed crust
+//             code:'16SCREEN',
+//             options:{
+//                 //sauce, whole pizza : normal
+//                 X: {'1/1' : '1'},
+//                 //cheese, whole pizza  : double
+//                 C: {'1/1' : '1.5'},
+//                 //pepperoni, whole pizza : double
+//                 P: {'1/2' : '1.5'}
+//             }
+//         }
+//     );
+//     // const pizza = new Item(req.body.pizza);
+//     let customer = create_customer(req.body.address.streetName, req.body.address.streetNumber, req.body.address.city, req.body.address.region, req.body.address.postalCode, req.body.address.deliveryInstructions, req.body.firstName, req.body.lastName, req.body.phone, req.body.email);
+//     let storeID = await find_closest_store(customer);
+//     let order = await create_order(customer, storeID, pizza);
+//     console.log(await order.price());
+//     // await complete_payment(order, customer, req.body.number, req.body.expiration, req.body.securityCode, req.body.postalCode, req.body.tipAmount);
+//     res.send('Order placed');
+// });
+
+// For simplicity, storing orders in memory
+let orders = {};
+let orderIdCounter = 1;
+
 app.post('/order', async (req, res) => {
-    const pizza=new Item(
-        {
-            //16 inch hand tossed crust
-            code:'16SCREEN',
-            options:{
-                //sauce, whole pizza : normal
-                X: {'1/1' : '1'},
-                //cheese, whole pizza  : double
-                C: {'1/1' : '1.5'},
-                //pepperoni, whole pizza : double
-                P: {'1/2' : '1.5'}
-            }
-        }
+    // Create a new order
+    const orderId = orderIdCounter++;
+    let customer = create_customer(
+        req.body.address.streetName,
+        req.body.address.streetNumber,
+        req.body.address.city,
+        req.body.address.region,
+        req.body.address.postalCode,
+        req.body.address.deliveryInstructions,
+        req.body.firstName,
+        req.body.lastName,
+        req.body.phone,
+        req.body.email
     );
-    // const pizza = new Item(req.body.pizza);
-    let customer = create_customer(req.body.address.streetName, req.body.address.streetNumber, req.body.address.city, req.body.address.region, req.body.address.postalCode, req.body.address.deliveryInstructions, req.body.firstName, req.body.lastName, req.body.phone, req.body.email);
     let storeID = await find_closest_store(customer);
+    let pizza = new Item(req.body.pizza);
     let order = await create_order(customer, storeID, pizza);
-    console.log(await order.price());
-    // await complete_payment(order, customer, req.body.number, req.body.expiration, req.body.securityCode, req.body.postalCode, req.body.tipAmount);
-    res.send('Order placed');
+
+    // Store the order with a unique ID
+    orders[orderId] = { order, customer, pizza };
+
+    res.json({ message: 'Order placed', orderId, price: await order.price() });
 });
+
+app.get('/order/:id', (req, res) => {
+    // Retrieve the order
+    const orderId = req.params.id;
+    const order = orders[orderId];
+    if (order) {
+        res.json(order);
+    } else {
+        res.status(404).json({ error: "Order not found" });
+    }
+});
+
+app.put('/order/:id', async (req, res) => {
+    // Update the order
+    const orderId = req.params.id;
+    const existingOrder = orders[orderId];
+    if (!existingOrder) {
+        return res.status(404).json({ error: "Order not found" });
+    }
+
+    let customer = create_customer(
+        req.body.address.streetName,
+        req.body.address.streetNumber,
+        req.body.address.city,
+        req.body.address.region,
+        req.body.address.postalCode,
+        req.body.address.deliveryInstructions,
+        req.body.firstName,
+        req.body.lastName,
+        req.body.phone,
+        req.body.email
+    );
+    let storeID = await find_closest_store(customer);
+    let pizza = new Item(req.body.pizza);
+    let updatedOrder = await create_order(customer, storeID, pizza);
+
+    // Update stored order
+    orders[orderId] = { order: updatedOrder, customer, pizza };
+    res.json({ message: 'Order updated', orderId, price: await updatedOrder.price() });
+});
+
+app.delete('/order/:id', (req, res) => {
+    // Delete the order
+    const orderId = req.params.id;
+    if (orders[orderId]) {
+        delete orders[orderId];
+        res.json({ message: 'Order deleted' });
+    } else {
+        res.status(404).json({ error: "Order not found" });
+    }
+});
+
 
 app.listen(3000, () => {
     console.log("Node.js server is running on port 3000");
