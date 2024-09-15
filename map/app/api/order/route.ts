@@ -33,9 +33,11 @@ if (!SLACK_WEBHOOK_URL) {
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
   const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
 
+  const deliveryLink = `https://skip-the-walk.vercel.app/?room=${deliveryRoom}`;
+
   // Create the Slack message payload
   const payload = {
-    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}`,
+    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}\n*Route*: ${deliveryLink}`,
   };
 
   try {
@@ -58,7 +60,13 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
 
 // POST handler for the API route
 export async function POST(req: NextRequest) {
+
+  // Log the raw request
+  console.log("Incoming request:", req);
+
+  // Try to parse the body
   const body: OrderRequestBody = await req.json();
+  console.log("Parsed body:", body);
 
   const {
     type,

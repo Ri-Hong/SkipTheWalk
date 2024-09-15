@@ -7,10 +7,26 @@ import fs from 'fs';
 import ejs from 'ejs';
 const program = new Command();
 
+// Path to the config file
+const configFilePath = './config.json';
+
 // Function to handle pizza order and collect all necessary information
 async function orderPizza() {
-  const questions = [
-    // Pizza information prompts
+  let config = {};
+
+  // Check if config file exists
+  if (fs.existsSync(configFilePath)) {
+    // Read the config file
+    const configData = fs.readFileSync(configFilePath, 'utf-8');
+    config = JSON.parse(configData);
+    console.log('Using saved configuration from config.json');
+  } else {
+    console.log('No config file found. Please run `stw config` first.');
+    return;
+  }
+
+  // Pizza-related questions only
+  const pizzaQuestions = [
     {
       type: 'list',
       name: 'type',
@@ -29,7 +45,53 @@ async function orderPizza() {
       message: 'Choose your toppings:',
       choices: ['Mushrooms', 'Onions', 'Sausage', 'Bacon', 'Extra Cheese', 'Peppers', 'Olives'],
     },
-    // Customer information prompts
+  ];
+
+  // Ask for pizza details only
+  const pizzaAnswers = await inquirer.prompt(pizzaQuestions);
+
+  // Combine pizza details into a list of individual strings
+  const pizzaDetails = [
+    pizzaAnswers.type, 
+    pizzaAnswers.size, 
+    ...(pizzaAnswers.toppings || [])  // Ensure toppings is always an array
+  ];
+
+  // Add a timestamp to track the order time
+  const orderTime = new Date().toISOString();
+
+  // Combine the saved configuration and pizza order details
+  const orderDetails = {
+    ...config, // Non-pizza details from config file
+    pizzaDetails,
+    orderTime,
+  };
+
+  // Send the data to the API with pizza information and orderTime included
+  const apiUrl = `https://skip-the-walk.vercel.app/api/order`;
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderDetails),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Order placed successfully:', data);
+    } else {
+      console.error('Failed to place order:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+// Function to handle the configuration setup
+async function setupConfig() {
+  const configQuestions = [
     {
       type: 'input',
       name: 'firstName',
@@ -54,7 +116,6 @@ async function orderPizza() {
       message: 'Enter your phone number:',
       validate: (input) => /^\d{10,15}$/.test(input) ? true : 'Phone number must contain only digits and be 10-15 digits long',
     },
-    // Address information prompts
     {
       type: 'input',
       name: 'street',
@@ -79,7 +140,7 @@ async function orderPizza() {
       message: 'Enter your postal code:',
       validate: (input) => input ? true : 'Postal code is required',
     },
-    // Payment information prompts
+    // Payment information
     {
       type: 'input',
       name: 'creditCardNumber',
@@ -103,55 +164,14 @@ async function orderPizza() {
       name: 'creditCardPostalCode',
       message: 'Enter your credit card postal code:',
       validate: (input) => input ? true : 'Postal code is required',
-    }
+    },
   ];
 
-  // Get user answers
-  const answers = await inquirer.prompt(questions);
+  // Ask all the non-pizza-related questions and save the answers in a config file
+  const answers = await inquirer.prompt(configQuestions);
+  fs.writeFileSync(configFilePath, JSON.stringify(answers, null, 2));
 
-  // Combine pizza details into a list of individual strings
-  const pizzaDetails = [answers.type, answers.size, ...answers.toppings];
-
-  // Add a timestamp to track the order time
-  const orderTime = new Date().toISOString();
-
-  // Call the function to create the Terraform file with the gathered information (excluding order time)
-  create_tf_file(
-    answers.firstName,
-    answers.lastName,
-    answers.email,
-    answers.phoneNumber,
-    answers.creditCardNumber,
-    answers.creditCardCvv,
-    answers.creditCardDate,
-    answers.creditCardPostalCode,
-    answers.street,
-    answers.city,
-    answers.region,
-    answers.postalCode,
-    pizzaDetails
-  );
-
-  // Send the data to the API with pizza information and orderTime included
-  const apiUrl = `https://skip-the-walk.vercel.app/api/order`;
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ...answers, pizzaDetails, orderTime }),  // Include orderTime in the API request
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Order placed successfully:', data);
-    } else {
-      console.error('Failed to place order:', response.statusText);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
+  console.log('Configuration saved successfully!');
 }
 
 program
@@ -159,97 +179,9 @@ program
   .description('Order a pizza')
   .action(orderPizza);
 
+program
+  .command('config')
+  .description('Set up your pizza ordering configuration')
+  .action(setupConfig);
+
 program.parse(process.argv);
-
-// Function to create the Terraform file with the gathered information (excluding orderTime)
-function create_tf_file(
-  firstName,
-  lastName,
-  email,
-  phoneNumber,
-  creditCardNumber,
-  creditCardCvv,
-  creditCardDate,
-  creditCardPostalCode,
-  street,
-  city,
-  region,
-  postalCode,
-  pizzaDetails
-) {
-  // Define the Terraform template with placeholders
-  const terraformTemplate = `
-terraform {
-  required_providers {
-    dominos = {
-      source  = "MNThomson/dominos"
-    }
-  }
-}
-
-provider "dominos" {
-  first_name    = "<%= firstName %>"
-  last_name     = "<%= lastName %>"
-  email_address = "<%= email %>"
-  phone_number  = "<%= phoneNumber %>"
-
-  credit_card = {
-    number      = <%= creditCardNumber %>
-    cvv         = <%= creditCardCvv %>
-    date        = "<%= creditCardDate %>"
-    postal_code = "<%= creditCardPostalCode %>"
-  }
-}
-
-data "dominos_address" "addr" {
-  street      = "<%= street %>"
-  city        = "<%= city %>"
-  region      = "<%= region %>"
-  postal_code = "<%= postalCode %>"
-}
-
-data "dominos_store" "store" {
-  address_url_object = data.dominos_address.addr.url_object
-}
-
-data "dominos_menu_item" "item" {
-  store_id     = data.dominos_store.store.store_id
-  query_string = <%- JSON.stringify(pizzaDetails) %> // Pizza details as an array of strings
-}
-
-output "OrderOutput" {
-  value = data.dominos_menu_item.item.matches[*]
-}
-
-resource "dominos_order" "order" {
-  address_api_object = data.dominos_address.addr.api_object
-  item_codes         = data.dominos_menu_item.item.matches[*].code
-  store_id           = data.dominos_store.store.store_id
-}
-`;
-
-  // Replace placeholders with actual values
-  const parameters = {
-    firstName: firstName,
-    lastName: lastName,
-    email: email,
-    phoneNumber: phoneNumber,
-    creditCardNumber: creditCardNumber,
-    creditCardCvv: creditCardCvv,
-    creditCardDate: creditCardDate,
-    creditCardPostalCode: creditCardPostalCode,
-    street: street,
-    city: city,
-    region: region,
-    postalCode: postalCode,
-    pizzaDetails: pizzaDetails
-  };
-
-  // Generate the Terraform file using ejs rendering (with unescaped strings for pizzaDetails)
-  const generatedTerraform = ejs.render(terraformTemplate, parameters);
-
-  // Write the generated content to a .tf file
-  fs.writeFileSync('generated_terraform.tf', generatedTerraform);
-
-  console.log('Terraform file generated successfully!');
-}
