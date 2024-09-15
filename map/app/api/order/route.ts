@@ -29,6 +29,30 @@ if (!SLACK_WEBHOOK_URL) {
   throw new Error("SLACK_WEBHOOK_URL is not defined in the environment variables.");
 }
 
+// Function to format the orderTime in a more human-readable format
+function formatOrderTime(dateString: string): string {
+  const date = new Date(dateString);
+
+  // Create a DateTimeFormat object for Toronto time (Eastern Time)
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/Toronto', // Eastern Time Zone
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: true, // Use 12-hour format
+  };
+
+  return new Intl.DateTimeFormat('en-CA', options).format(date);
+}
+
+// Example usage inside orderPizza
+const orderTime = new Date().toISOString();
+const prettyOrderTime = formatOrderTime(orderTime); // Format the order time
+
+
 // Function to send a message to Slack
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
   const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
@@ -37,8 +61,8 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
 
   // Create the Slack message payload
   const payload = {
-    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}\n*Route*: ${deliveryLink}`,
-  };
+    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${prettyOrderTime}\n*Route*: ${deliveryLink}`,
+  };  
 
   try {
     const response = await fetch(SLACK_WEBHOOK_URL as string, {
