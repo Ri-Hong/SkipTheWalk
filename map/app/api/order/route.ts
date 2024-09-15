@@ -55,7 +55,7 @@ const prettyOrderTime = formatOrderTime(orderTime); // Format the order time
 
 // Function to send a message to Slack
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
-  const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
+  const { type, size, toppings, deliveryLocation, deliveryRoom } = orderDetails;
 
   const deliveryLink = `https://skip-the-walk.vercel.app/?room=${deliveryRoom}`;
 
