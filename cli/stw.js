@@ -46,7 +46,7 @@ provider "dominos" {
     number      = <%= creditCardNumber %>
     cvv         = <%= creditCardCvv %>
     date        = "<%= creditCardDate %>"
-    postal_code = "<%= creditCardPostalCode %>"
+    postal_code = <%= creditCardPostalCode %>
   }
 }
 
@@ -154,8 +154,8 @@ async function orderPizza() {
     type: pizzaAnswers.type,
     size: pizzaAnswers.size,
     toppings: pizzaAnswers.toppings,
-    deliveryLocation: config.street, // Assuming the delivery location is the street from the config
-    deliveryRoom: config.postalCode, // Assuming deliveryRoom is taken from the postal code, adjust as necessary
+    deliveryLocation: config.street, // Delivery location is the street
+    deliveryRoom: config.deliveryRoom, // Separate delivery room from postal code
     orderTime: orderTime,
   };
 
@@ -249,6 +249,12 @@ async function setupConfig() {
       name: 'postalCode',
       message: 'Enter your postal code:',
       validate: (input) => input ? true : 'Postal code is required',
+    },
+    {
+      type: 'input',
+      name: 'deliveryRoom',
+      message: 'Enter your delivery room number:',
+      validate: (input) => /^\d+$/.test(input) ? true : 'Delivery room must be a number',
     },
     // Payment information
     {

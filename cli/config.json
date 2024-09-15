@@ -1,14 +1,15 @@
 {
   "firstName": "Ri",
   "lastName": "Hong",
-  "email": "riri.ong@df.com",
-  "phoneNumber": "2131231233",
-  "street": "s",
-  "city": "w",
-  "region": "w",
-  "postalCode": "w",
-  "creditCardNumber": "1231231312333333",
+  "email": "riri.hong@gmail.c",
+  "phoneNumber": "3123123123",
+  "street": "38 IDK",
+  "city": "Toronto",
+  "region": "Ontario",
+  "postalCode": "M9sadad",
+  "deliveryRoom": "1419",
+  "creditCardNumber": "1234211234123333",
   "creditCardCvv": "333",
   "creditCardDate": "12/12",
-  "creditCardPostalCode": "m"
+  "creditCardPostalCode": "Mwm 213"
 }
