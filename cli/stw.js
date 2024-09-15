@@ -10,13 +10,106 @@ const program = new Command();
 // Path to the config file
 const configFilePath = './config.json';
 
+// Function to create the Terraform file with the gathered information
+function create_tf_file(
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
+  creditCardNumber,
+  creditCardCvv,
+  creditCardDate,
+  creditCardPostalCode,
+  street,
+  city,
+  region,
+  postalCode,
+  pizzaDetails
+) {
+  // Define the Terraform template with placeholders
+  const terraformTemplate = `
+terraform {
+  required_providers {
+    dominos = {
+      source  = "MNThomson/dominos"
+    }
+  }
+}
+
+provider "dominos" {
+  first_name    = "<%= firstName %>"
+  last_name     = "<%= lastName %>"
+  email_address = "<%= email %>"
+  phone_number  = "<%= phoneNumber %>"
+
+  credit_card = {
+    number      = <%= creditCardNumber %>
+    cvv         = <%= creditCardCvv %>
+    date        = "<%= creditCardDate %>"
+    postal_code = "<%= creditCardPostalCode %>"
+  }
+}
+
+data "dominos_address" "addr" {
+  street      = "<%= street %>"
+  city        = "<%= city %>"
+  region      = "<%= region %>"
+  postal_code = "<%= postalCode %>"
+}
+
+data "dominos_store" "store" {
+  address_url_object = data.dominos_address.addr.url_object
+}
+
+data "dominos_menu_item" "item" {
+  store_id     = data.dominos_store.store.store_id
+  query_string = <%- JSON.stringify(pizzaDetails) %> // Pizza details as an array of strings
+}
+
+output "OrderOutput" {
+  value = data.dominos_menu_item.item.matches[*]
+}
+
+resource "dominos_order" "order" {
+  address_api_object = data.dominos_address.addr.api_object
+  item_codes         = data.dominos_menu_item.item.matches[*].code
+  store_id           = data.dominos_store.store.store_id
+}
+`;
+
+  // Replace placeholders with actual values
+  const parameters = {
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    creditCardNumber,
+    creditCardCvv,
+    creditCardDate,
+    creditCardPostalCode,
+    street,
+    city,
+    region,
+    postalCode,
+    pizzaDetails,
+  };
+
+  // Generate the Terraform file using ejs rendering (with unescaped strings for pizzaDetails)
+  const generatedTerraform = ejs.render(terraformTemplate, parameters);
+
+  // Write the generated content to a .tf file
+  fs.writeFileSync('generated_terraform.tf', generatedTerraform);
+
+  console.log('Terraform file generated successfully!');
+}
+
+
 // Function to handle pizza order and collect all necessary information
 async function orderPizza() {
   let config = {};
 
   // Check if config file exists
   if (fs.existsSync(configFilePath)) {
-    // Read the config file
     const configData = fs.readFileSync(configFilePath, 'utf-8');
     config = JSON.parse(configData);
     console.log('Using saved configuration from config.json');
@@ -51,31 +144,31 @@ async function orderPizza() {
   const pizzaAnswers = await inquirer.prompt(pizzaQuestions);
 
   // Combine pizza details into a list of individual strings
-  const pizzaDetails = [
-    pizzaAnswers.type, 
-    pizzaAnswers.size, 
-    ...(pizzaAnswers.toppings || [])  // Ensure toppings is always an array
-  ];
+  const pizzaDetails = [pizzaAnswers.type, pizzaAnswers.size, ...pizzaAnswers.toppings];
 
   // Add a timestamp to track the order time
   const orderTime = new Date().toISOString();
 
-  // Combine the saved configuration and pizza order details
-  const orderDetails = {
-    ...config, // Non-pizza details from config file
-    pizzaDetails,
-    orderTime,
+  // Prepare the payload to be sent to the API (ONLY the required attributes)
+  const apiPayload = {
+    type: pizzaAnswers.type,
+    size: pizzaAnswers.size,
+    toppings: pizzaAnswers.toppings,
+    deliveryLocation: config.street, // Assuming the delivery location is the street from the config
+    deliveryRoom: config.postalCode, // Assuming deliveryRoom is taken from the postal code, adjust as necessary
+    orderTime: orderTime,
   };
 
-  // Send the data to the API with pizza information and orderTime included
+  // Send the data to the API with the required fields only
   const apiUrl = `https://skip-the-walk.vercel.app/api/order`;
   try {
+    console.log('Sending order details to API:', apiPayload); // Log the payload for debugging
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(orderDetails),
+      body: JSON.stringify(apiPayload),  // Send only the required fields to the API
     });
 
     if (response.ok) {
@@ -87,6 +180,23 @@ async function orderPizza() {
   } catch (error) {
     console.error('Error:', error);
   }
+
+  // Call the function to create the Terraform file with the full config and pizza details
+  create_tf_file(
+    config.firstName,
+    config.lastName,
+    config.email,
+    config.phoneNumber,
+    config.creditCardNumber,
+    config.creditCardCvv,
+    config.creditCardDate,
+    config.creditCardPostalCode,
+    config.street,
+    config.city,
+    config.region,
+    config.postalCode,
+    pizzaDetails
+  );
 }
 
 // Function to handle the configuration setup
@@ -174,6 +284,7 @@ async function setupConfig() {
   console.log('Configuration saved successfully!');
 }
 
+// Register the commands with Commander
 program
   .command('order')
   .description('Order a pizza')

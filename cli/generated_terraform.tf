@@ -8,24 +8,24 @@ terraform {
 }
 
 provider "dominos" {
-  first_name    = "e"
-  last_name     = "e"
-  email_address = "e@e.com"
-  phone_number  = "1231231233"
+  first_name    = "Ri"
+  last_name     = "Hong"
+  email_address = "riri.ong@df.com"
+  phone_number  = "2131231233"
 
   credit_card = {
-    number      = 3123123123213333
+    number      = 1231231312333333
     cvv         = 333
     date        = "12/12"
-    postal_code = "123"
+    postal_code = "m"
   }
 }
 
 data "dominos_address" "addr" {
-  street      = "3"
-  city        = "3"
-  region      = "3"
-  postal_code = "3"
+  street      = "s"
+  city        = "w"
+  region      = "w"
+  postal_code = "w"
 }
 
 data "dominos_store" "store" {
