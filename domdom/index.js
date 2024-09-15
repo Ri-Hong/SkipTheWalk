@@ -1,7 +1,9 @@
 import {Address,Order,Customer,Item,Payment,NearbyStores,Tracking} from 'dominos';
-import {urls} from 'dominos';
 import {useInternational,canada} from 'dominos/utils/urls.js';
 useInternational(canada);
+import express from 'express';
+const app = express();
+app.use(express.json());
 
 // console.dir(urls);
 
@@ -136,4 +138,32 @@ async function test_order() {
     // await complete_payment(order, customer, number, expiration, securityCode, postalCode, tipAmount);
 }
 
-test_order();
+// test_order();
+
+app.post('/order', async (req, res) => {
+    const pizza=new Item(
+        {
+            //16 inch hand tossed crust
+            code:'16SCREEN',
+            options:{
+                //sauce, whole pizza : normal
+                X: {'1/1' : '1'},
+                //cheese, whole pizza  : double
+                C: {'1/1' : '1.5'},
+                //pepperoni, whole pizza : double
+                P: {'1/2' : '1.5'}
+            }
+        }
+    );
+    // const pizza = new Item(req.body.pizza);
+    let customer = create_customer(req.body.address.streetName, req.body.address.streetNumber, req.body.address.city, req.body.address.region, req.body.address.postalCode, req.body.address.deliveryInstructions, req.body.firstName, req.body.lastName, req.body.phone, req.body.email);
+    let storeID = await find_closest_store(customer);
+    let order = await create_order(customer, storeID, pizza);
+    console.log(await order.price());
+    // await complete_payment(order, customer, req.body.number, req.body.expiration, req.body.securityCode, req.body.postalCode, req.body.tipAmount);
+    res.send('Order placed');
+});
+
+app.listen(3000, () => {
+    console.log("Node.js server is running on port 3000");
+});

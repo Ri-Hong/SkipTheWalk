@@ -10,6 +10,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
-    "dominos": "^3.3.1"
+    "dominos": "^3.3.1",
+    "express": "^4.21.0"
   }
 }
