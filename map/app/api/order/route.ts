@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
     cvc,
   } = body;
 
+  console.log("creditCardNumber", creditCardNumber);
+  console.log("expiryDate", expiryDate);
+  console.log("cvc", cvc);
+
   // Handle the order (you can add logic here, such as saving to the database)
 
   // Send back a success response with the order details
