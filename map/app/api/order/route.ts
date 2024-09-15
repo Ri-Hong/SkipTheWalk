@@ -26,7 +26,7 @@ interface OrderResponse {
 const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
 
 // Function to send a message to Slack
-export async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
+async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
   const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
 
   // Create the Slack message payload
