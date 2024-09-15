@@ -29,36 +29,13 @@ if (!SLACK_WEBHOOK_URL) {
   throw new Error("SLACK_WEBHOOK_URL is not defined in the environment variables.");
 }
 
-// Function to format the orderTime in Toronto time (Eastern Time)
-function formatOrderTime(dateString: string): string {
-  const date = new Date(dateString);
-
-  // Create a DateTimeFormat object for Toronto time (Eastern Time)
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone: 'America/Toronto', // Eastern Time Zone
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: true, // 12-hour format
-  };
-
-  // Format the date to a more readable string
-  return new Intl.DateTimeFormat('en-CA', options).format(date);
-}
-
 // Function to send a message to Slack
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
   const { type, size, toppings, deliveryLocation, deliveryRoom, orderTime } = orderDetails;
 
-  // Convert the orderTime to Toronto time (Eastern Time Zone)
-  const formattedOrderTime = formatOrderTime(orderTime);
-
-  // Create the Slack message payload with formatted time
+  // Create the Slack message payload
   const payload = {
-    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${formattedOrderTime}`,
+    text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${orderTime}`,
   };
 
   try {
@@ -79,9 +56,16 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
 }
 
 
-
 // POST handler for the API route
 export async function POST(req: NextRequest) {
+
+  // Log the raw request
+  console.log("Incoming request:", req);
+
+  // Try to parse the body
+  const bodydup = await req.json();
+  console.log("Parsed body:", bodydup);
+
   const body: OrderRequestBody = await req.json();
 
   const {
