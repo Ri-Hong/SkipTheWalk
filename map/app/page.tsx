@@ -2,6 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from 'next/navigation'
 
 // Dynamically import MapView and disable SSR
 const Map = dynamic(() => import("@/components/Map"), {
@@ -10,5 +11,9 @@ const Map = dynamic(() => import("@/components/Map"), {
 });
 
 export default function Home() {
-  return <Map />;
+  const searchParams = useSearchParams()
+ 
+  const room = searchParams.get('room') || '';
+
+  return <Map room={room}/>;
 }

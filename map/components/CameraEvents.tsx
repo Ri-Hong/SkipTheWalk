@@ -19,13 +19,13 @@ export default function CameraEvents() {
   }, [mapView, mapData]);
 
   useEvent("camera-change", (event) => {
-    console.log(
-      "camera-change",
-      event.bearing,
-      event.pitch,
-      event.zoomLevel,
-      event.center
-    );
+    // console.log(
+    //   "camera-change",
+    //   event.bearing,
+    //   event.pitch,
+    //   event.zoomLevel,
+    //   event.center
+    // );
     setZoomLevel(Math.round(event.zoomLevel));
   });
 

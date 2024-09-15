@@ -5,7 +5,11 @@ import FloorSelector from "./FloorSelector";
 import CameraEvents from "./CameraEvents";
 import DrawNavigation from "./DrawNavigation";
 
-export default function Map() {
+interface MapProps {
+  room: string;
+}
+
+export default function Map({ room }: MapProps) {
   const { isLoading, error, mapData } = useMapData({
     key: "mik_nF3LY3Fd7zixJ0k6l50380723",
     secret: "mis_zkYDjiB9G4pvD5KzBARAacAgfkY1L1AEC1OogTrqWNW83c00fc4",
@@ -25,7 +29,7 @@ export default function Map() {
         <FloorSelector />
         <CameraEvents />
         <Labels />
-        <DrawNavigation />
+        <DrawNavigation dest={room}/>
     </MapView>
   ) : null;
 }

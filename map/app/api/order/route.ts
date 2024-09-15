@@ -12,7 +12,7 @@ interface OrderRequestBody {
   cvc: string;
 }
 
-// Define the response structure
+// Define the response structures
 interface OrderResponse {
   message: string;
   orderDetails: {
