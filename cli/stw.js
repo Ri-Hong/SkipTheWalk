@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { Command } = require('commander');
-const inquirer = require('inquirer');
-const fetch = require('node-fetch'); // If you're using Node.js older than v18
+import { Command } from 'commander';
+import inquirer from 'inquirer';
+import fetch from 'node-fetch';
 
 const program = new Command();
 
@@ -29,8 +29,17 @@ async function orderPizza() {
     },
     {
       type: 'input',
-      name: 'deliveryLocation',
+      name: 'deliveryAddress',
       message: 'Enter your delivery address:',
+    },
+    {
+        type: 'input',
+        name: 'deliveryRoom',
+        message: 'Enter your delivery room number:',
+        validate: (input) => {
+            const isValid = /^\d+$/.test(input);  // Check if the input contains only digits
+            return isValid ? true : 'Please enter a valid room number (numbers only).';
+        }
     },
     {
       type: 'input',
@@ -56,7 +65,7 @@ async function orderPizza() {
   const answers = await inquirer.prompt(questions);
 
   // Send the data to the API
-  const apiUrl = 'https://example.com/api/order'; // Replace with your Next.js API endpoint
+  const apiUrl = 'https://skip-the-walk.vercel.app/api/order'; // Replace with your Next.js API endpoint
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',

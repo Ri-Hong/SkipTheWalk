@@ -6,6 +6,7 @@ interface OrderRequestBody {
   size: string;
   toppings: string[];
   deliveryLocation: string;
+  deliveryRoom: string;
   creditCardNumber: string;
   expiryDate: string;
   cvc: string;
@@ -19,6 +20,7 @@ interface OrderResponse {
     size: string;
     toppings: string[];
     deliveryLocation: string;
+    deliveryRoom: string;
   };
 }
 
@@ -31,6 +33,7 @@ export async function POST(req: NextRequest) {
     size,
     toppings,
     deliveryLocation,
+    deliveryRoom,
     creditCardNumber,
     expiryDate,
     cvc,
@@ -50,6 +53,7 @@ export async function POST(req: NextRequest) {
       size,
       toppings,
       deliveryLocation,
+      deliveryRoom
     },
   });
 }
