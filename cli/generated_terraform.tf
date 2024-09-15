@@ -8,24 +8,24 @@ terraform {
 }
 
 provider "dominos" {
-  first_name    = "r"
+  first_name    = "R"
   last_name     = "r"
-  email_address = "rr@r.com"
-  phone_number  = "213123123123"
+  email_address = "r@r.com"
+  phone_number  = "3141341234"
 
   credit_card = {
     number      = 1231231231231233
     cvv         = 123
     date        = "12/12"
-    postal_code = "13"
+    postal_code = "1"
   }
 }
 
 data "dominos_address" "addr" {
-  street      = "dsf"
-  city        = "fd"
-  region      = "f"
-  postal_code = "f"
+  street      = "r"
+  city        = "r"
+  region      = "r"
+  postal_code = "r"
 }
 
 data "dominos_store" "store" {
@@ -34,7 +34,7 @@ data "dominos_store" "store" {
 
 data "dominos_menu_item" "item" {
   store_id     = data.dominos_store.store.store_id
-  query_string = ["Margherita","Small","Mushrooms"] // Pizza details as an array of strings
+  query_string = ["Margherita","Small"] // Pizza details as an array of strings
 }
 
 output "OrderOutput" {

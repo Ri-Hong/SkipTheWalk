@@ -23,7 +23,11 @@ interface OrderResponse {
   };
 }
 
-const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
+const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
+
+if (!SLACK_WEBHOOK_URL) {
+  throw new Error("SLACK_WEBHOOK_URL is not defined in the environment variables.");
+}
 
 // Function to send a message to Slack
 async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCardNumber' | 'expiryDate' | 'cvc'>) {
@@ -35,7 +39,7 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
   };
 
   try {
-    const response = await fetch(SLACK_WEBHOOK_URL, {
+    const response = await fetch(SLACK_WEBHOOK_URL as string, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
