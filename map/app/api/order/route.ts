@@ -62,6 +62,21 @@ async function sendSlackMessage(orderDetails: Omit<OrderRequestBody, 'creditCard
   // Create the Slack message payload
   const payload = {
     text: `*New Order Received!*\n\n*Type*: ${type}\n*Size*: ${size}\n*Toppings*: ${toppings.join(', ')}\n*Delivery Location*: ${deliveryLocation}\n*Delivery Room*: ${deliveryRoom}\n*Order Time*: ${prettyOrderTime}\n*Route*: ${deliveryLink}`,
+    attachments: [
+      {
+        text: "Do you want to accept this order?",
+        fallback: "You are unable to accept the order",
+        callback_id: "accept_order",  // Unique identifier for the button action
+        actions: [
+          {
+            name: "accept_order",
+            text: "Accept Order",
+            type: "button",
+            value: "accept",
+          },
+        ],
+      },
+    ],
   };  
 
   try {
