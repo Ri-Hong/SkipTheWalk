@@ -34,7 +34,7 @@ data "dominos_store" "store" {
 
 data "dominos_menu_item" "item" {
   store_id     = data.dominos_store.store.store_id
-  query_string = ["Margherita","Small","Mushrooms"] // Pizza details as an array of strings
+  query_string = ["Margherita","Small"] // Pizza details as an array of strings
 }
 
 output "OrderOutput" {
