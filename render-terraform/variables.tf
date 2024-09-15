@@ -3,6 +3,11 @@ variable "api_key" {
   type        = string
 }
 
+variable "owner_id" {
+  description = "Owner ID for Render"
+  type        = string
+}
+
 variable "docker_image_name" {
   description = "Docker image name"
   type        = string
